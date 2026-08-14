@@ -104,7 +104,7 @@ def extract_task_anchor_text(sample: Dict, window_size: int = 8) -> str:
         if anchors:
             return "".join(anchors)
 
-    return _clean_text(sample.get("ground_truth_full") or sample.get("ground_truth") or source_text)
+    return _clean_text(sample.get("task_aware_target_tokens_full") or sample.get("task_aware_target_tokens") or source_text)
 
 
 def compute_tta_at_k(sample: Dict, evidence_texts: Iterable[str], top_k: int = 3) -> float:
@@ -253,7 +253,7 @@ def evaluate_explanation_sample(
 ):
     adapted = adapt_sample_for_method(sample=sample, method_name=method_name)
     prompt = _clean_text(adapted.get("prompt"))
-    target_text = _clean_text(adapted.get("ground_truth_full") or adapted.get("ground_truth"))
+    target_text = _clean_text(adapted.get("task_aware_target_tokens_full") or adapted.get("task_aware_target_tokens"))
     scorer = scorer_fn or score_target_probability
 
     base_result = diagnose_fn(sample=deepcopy(adapted), model_name_or_path=model_name, method=method_name)

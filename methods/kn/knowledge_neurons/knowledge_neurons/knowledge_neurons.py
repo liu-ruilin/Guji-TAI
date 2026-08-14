@@ -166,9 +166,9 @@ class KnowledgeNeurons:
                 target = self.tokenizer.convert_tokens_to_ids(target)
         return encoded_input, mask_idx, target
 
-    def _generate(self, prompt, ground_truth):
+    def _generate(self, prompt, task_aware_target_tokens):
         encoded_input, mask_idx, target_label = self._prepare_inputs(
-            prompt, ground_truth
+            prompt, task_aware_target_tokens
         )
         # for autoregressive models, we might want to generate > 1 token
         n_sampling_steps = len(target_label) if ("qwen" in self.model_type or "gpt" in self.model_type or 'llama' in self.model_type) else 1
@@ -181,7 +181,7 @@ class KnowledgeNeurons:
             if i > 0:
                 # retokenize new inputs
                 encoded_input, mask_idx, target_label = self._prepare_inputs(
-                    prompt, ground_truth
+                    prompt, task_aware_target_tokens
                 )
             outputs = self.model(**encoded_input)
             probs = F.softmax(outputs.logits[:, mask_idx, :], dim=-1)
@@ -299,18 +299,18 @@ class KnowledgeNeurons:
     def get_scores(
         self,
         prompt: str,
-        ground_truth: str,
+        task_aware_target_tokens: str,
         batch_size: int = 10,
         steps: int = 20,
         attribution_method: str = "integrated_grads",
         pbar: bool = True,
     ):
         """
-        Gets the attribution scores for a given prompt and ground truth.
+        Gets the attribution scores for a given prompt and task-aware target tokens.
         `prompt`: str
             the prompt to get the attribution scores for
-        `ground_truth`: str
-            the ground truth / expected output
+        `task_aware_target_tokens`: str
+            the task-aware target tokens / expected output
         `batch_size`: int
             batch size
         `steps`: int
@@ -328,7 +328,7 @@ class KnowledgeNeurons:
         ):
             layer_scores = self.get_scores_for_layer(
                 prompt,
-                ground_truth,
+                task_aware_target_tokens,
                 encoded_input=encoded_input,
                 layer_idx=layer_idx,
                 batch_size=batch_size,
@@ -342,7 +342,7 @@ class KnowledgeNeurons:
     def get_coarse_neurons(
         self,
         prompt: str,
-        ground_truth: str,
+        task_aware_target_tokens: str,
         batch_size: int = 10,
         steps: int = 20,
         threshold: float = None,
@@ -352,14 +352,14 @@ class KnowledgeNeurons:
         pbar: bool = True,
     ) -> List[List[int]]:
         """
-        Finds the 'coarse' neurons for a given prompt and ground truth.
+        Finds the 'coarse' neurons for a given prompt and task-aware target tokens.
         The coarse neurons are the neurons that are most activated by a single prompt.
         We refine these by using multiple prompts that express the same 'fact'/relation in different ways.
 
         `prompt`: str
             the prompt to get the coarse neurons for
-        `ground_truth`: str
-            the ground truth / expected output
+        `task_aware_target_tokens`: str
+            the task-aware target tokens / expected output
         `batch_size`: int
             batch size
         `steps`: int
@@ -375,7 +375,7 @@ class KnowledgeNeurons:
         """
         attribution_scores = self.get_scores(
             prompt,
-            ground_truth,
+            task_aware_target_tokens,
             batch_size=batch_size,
             steps=steps,
             pbar=pbar,
@@ -403,7 +403,7 @@ class KnowledgeNeurons:
     def get_refined_neurons(
         self,
         prompts: List[str],
-        ground_truth: str,
+        task_aware_target_tokens: str,
         negative_examples: Optional[List[str]] = None,
         p: float = 0.5,
         batch_size: int = 10,
@@ -415,7 +415,7 @@ class KnowledgeNeurons:
         refine: bool = False,
     ) -> List[List[int]]:
         """
-        Finds the 'refined' neurons for a given set of prompts and a ground truth / expected output.
+        Finds the 'refined' neurons for a given set of prompts and a task-aware target tokens / expected output.
 
         The input should be n different prompts, each expressing the same fact in different ways.
         For each prompt, we calculate the attribution scores of each intermediate neuron.
@@ -425,8 +425,8 @@ class KnowledgeNeurons:
 
         `prompts`: list of str
             the prompts to get the refined neurons for
-        `ground_truth`: str
-            the ground truth / expected output
+        `task_aware_target_tokens`: str
+            the task-aware target tokens / expected output
         `negative_examples`: list of str
             Optionally provide a list of negative examples. Any neuron that appears in these examples will be excluded from the final results.
         `p`: float
@@ -449,7 +449,7 @@ class KnowledgeNeurons:
         coarse_neurons = [
             self.get_coarse_neurons(
                 prompt,
-                ground_truth,
+                task_aware_target_tokens,
                 batch_size=batch_size,
                 steps=steps,
                 adaptive_threshold=coarse_adaptive_threshold,
@@ -465,7 +465,7 @@ class KnowledgeNeurons:
             negative_neurons = [
                 self.get_coarse_neurons(
                     negative_example,
-                    ground_truth,
+                    task_aware_target_tokens,
                     batch_size=batch_size,
                     steps=steps,
                     adaptive_threshold=coarse_adaptive_threshold,
@@ -506,7 +506,7 @@ class KnowledgeNeurons:
     def get_scores_for_layer(
         self,
         prompt: str,
-        ground_truth: str,
+        task_aware_target_tokens: str,
         layer_idx: int,
         batch_size: int = 10,
         steps: int = 20,
@@ -517,8 +517,8 @@ class KnowledgeNeurons:
         get the attribution scores for a given layer
         `prompt`: str
             the prompt to get the attribution scores for
-        `ground_truth`: str
-            the ground truth / expected output
+        `task_aware_target_tokens`: str
+            the task-aware target tokens / expected output
         `layer_idx`: int
             the layer to get the scores for
         `batch_size`: int
@@ -535,7 +535,7 @@ class KnowledgeNeurons:
 
         # First we take the unmodified model and use a hook to return the baseline intermediate activations at our chosen target layer
         encoded_input, mask_idx, target_label = self._prepare_inputs(
-            prompt, ground_truth, encoded_input
+            prompt, task_aware_target_tokens, encoded_input
         )
 
         # for autoregressive models, we might want to generate > 1 token
@@ -547,7 +547,7 @@ class KnowledgeNeurons:
                 if i > 0 and ("qwen" in self.model_type or self.model_type == "gpt" or self.model_type == 'llama'):
                     # retokenize new inputs
                     encoded_input, mask_idx, target_label = self._prepare_inputs(
-                        prompt, ground_truth
+                        prompt, task_aware_target_tokens
                     )
                 (
                     baseline_outputs,
@@ -664,7 +664,7 @@ class KnowledgeNeurons:
                 if i > 0 and ("qwen" in self.model_type or self.model_type == "gpt" or self.model_type == 'llama'):
                     # retokenize new inputs
                     encoded_input, mask_idx, target_label = self._prepare_inputs(
-                        prompt, ground_truth
+                        prompt, task_aware_target_tokens
                     )
                 (
                     baseline_outputs,
@@ -687,7 +687,7 @@ class KnowledgeNeurons:
     def modify_activations(
         self,
         prompt: str,
-        ground_truth: str,
+        task_aware_target_tokens: str,
         neurons: List[List[int]],
         mode: str = "suppress",
         undo_modification: bool = True,
@@ -695,18 +695,18 @@ class KnowledgeNeurons:
     ) -> Tuple[dict, Callable]:
         results_dict = {}
         _, mask_idx, _ = self._prepare_inputs(
-            prompt, ground_truth
+            prompt, task_aware_target_tokens
         )  # just need to get the mask index for later - probably a better way to do this
-        # get the baseline probabilities of the groundtruth being generated + the argmax / greedy completion before modifying the activations
+        # get the baseline probabilities of the task_aware_target_tokens being generated + the argmax / greedy completion before modifying the activations
         (
             gt_baseline_prob,
             argmax_baseline_prob,
             argmax_completion_str,
             _,
-        ) = self._generate(prompt, ground_truth)
+        ) = self._generate(prompt, task_aware_target_tokens)
         if not quiet:
             print(
-                f"\nBefore modification - groundtruth probability: {gt_baseline_prob}\nArgmax completion: `{argmax_completion_str}`\nArgmax prob: {argmax_baseline_prob}\n"
+                f"\nBefore modification - task_aware_target_tokens probability: {gt_baseline_prob}\nArgmax completion: `{argmax_completion_str}`\nArgmax prob: {argmax_baseline_prob}\n"
             )
         results_dict["before"] = {
             "gt_prob": gt_baseline_prob,
@@ -727,13 +727,13 @@ class KnowledgeNeurons:
             ff_attrs=self.input_ff_attr,
         )
 
-        # get the probabilities of the groundtruth being generated + the argmax / greedy completion after modifying the activations
+        # get the probabilities of the task_aware_target_tokens being generated + the argmax / greedy completion after modifying the activations
         new_gt_prob, new_argmax_prob, new_argmax_completion_str, _ = self._generate(
-            prompt, ground_truth
+            prompt, task_aware_target_tokens
         )
         if not quiet:
             print(
-                f"\nAfter modification - groundtruth probability: {new_gt_prob}\nArgmax completion: `{new_argmax_completion_str}`\nArgmax prob: {new_argmax_prob}\n"
+                f"\nAfter modification - task_aware_target_tokens probability: {new_gt_prob}\nArgmax completion: `{new_argmax_completion_str}`\nArgmax prob: {new_argmax_prob}\n"
             )
         results_dict["after"] = {
             "gt_prob": new_gt_prob,
@@ -758,18 +758,18 @@ class KnowledgeNeurons:
     def suppress_knowledge(
         self,
         prompt: str,
-        ground_truth: str,
+        task_aware_target_tokens: str,
         neurons: List[List[int]],
         undo_modification: bool = True,
         quiet: bool = False,
     ) -> Tuple[dict, Callable]:
         """
         prompt the model with `prompt`, zeroing the activations at the positions specified by `neurons`,
-        and measure the resulting affect on the ground truth probability.
+        and measure the resulting affect on the task-aware target tokens probability.
         """
         return self.modify_activations(
             prompt=prompt,
-            ground_truth=ground_truth,
+            task_aware_target_tokens=task_aware_target_tokens,
             neurons=neurons,
             mode="suppress",
             undo_modification=undo_modification,
@@ -779,18 +779,18 @@ class KnowledgeNeurons:
     def enhance_knowledge(
         self,
         prompt: str,
-        ground_truth: str,
+        task_aware_target_tokens: str,
         neurons: List[List[int]],
         undo_modification: bool = True,
         quiet: bool = False,
     ) -> Tuple[dict, Callable]:
         """
         prompt the model with `prompt`, multiplying the activations at the positions
-        specified by `neurons` by 2, and measure the resulting affect on the ground truth probability.
+        specified by `neurons` by 2, and measure the resulting affect on the task-aware target tokens probability.
         """
         return self.modify_activations(
             prompt=prompt,
-            ground_truth=ground_truth,
+            task_aware_target_tokens=task_aware_target_tokens,
             neurons=neurons,
             mode="enhance",
             undo_modification=undo_modification,
@@ -828,7 +828,7 @@ class KnowledgeNeurons:
         ) = self._generate(prompt, target)
         if not quiet:
             print(
-                f"\nBefore modification - groundtruth probability: {gt_baseline_prob}\nArgmax completion: `{argmax_completion_str}`\nArgmax prob: {argmax_baseline_prob}"
+                f"\nBefore modification - task_aware_target_tokens probability: {gt_baseline_prob}\nArgmax completion: `{argmax_completion_str}`\nArgmax prob: {argmax_baseline_prob}"
             )
         results_dict["before"] = {
             "gt_prob": gt_baseline_prob,
@@ -919,7 +919,7 @@ class KnowledgeNeurons:
         ) = self._generate(prompt, target)
         if not quiet:
             print(
-                f"\nAfter modification - groundtruth probability: {new_gt_prob}\nArgmax completion: `{new_argmax_completion_str}`\nArgmax prob: {new_argmax_prob}"
+                f"\nAfter modification - task_aware_target_tokens probability: {new_gt_prob}\nArgmax completion: `{new_argmax_completion_str}`\nArgmax prob: {new_argmax_prob}"
             )
         results_dict["after"] = {
             "gt_prob": new_gt_prob,

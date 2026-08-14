@@ -30,7 +30,7 @@ def _resolve_neuron_target_text(sample):
     output_segment = explanation_target.get("output_segment")
     if output_segment:
         return str(output_segment)
-    return str(sample.get("ground_truth", ""))
+    return str(sample.get("task_aware_target_tokens", ""))
 
 def get_refined_neurons(model, tok, sample, hparams, mt):
     runtime_device = getattr(model, "device", None)
@@ -47,7 +47,7 @@ def get_refined_neurons(model, tok, sample, hparams, mt):
     )
     refined_neurons = kn.get_refined_neurons(
         prompts=sample["prompts"],
-        ground_truth=sample["ground_truth"],
+        task_aware_target_tokens=sample["task_aware_target_tokens"],
         p=hparams.p,
         batch_size=hparams.batch_size,
         steps=hparams.steps,
@@ -101,7 +101,7 @@ def get_refined_neurons(model, tok, sample, hparams, mt):
 lock_kn = threading.Lock()
 def diagnose(sample, model_name_or_path, hparams=None):
     result = dict()
-    result["output"] = sample["ground_truth"]
+    result["output"] = sample["task_aware_target_tokens"]
     result["image"] = []
     result["table"] = []
     with lock_kn:

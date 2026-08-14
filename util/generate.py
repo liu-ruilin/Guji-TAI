@@ -7,5 +7,5 @@ def get_model_output_(
     max_out_len: int = 200,
 ):
     # In this project branch we use reference labels as output baseline.
-    return sample.get("ground_truth", "")
+    return sample.get("task_aware_target_tokens", "")
 

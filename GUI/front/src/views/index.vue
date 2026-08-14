@@ -216,7 +216,7 @@ export default {
             input_list: [],
             input_obj_list: [],
             USEREDITINPUT_params : {
-                "ground_truth":""
+                "task_aware_target_tokens":""
             },
 		};
 	},
@@ -461,7 +461,7 @@ export default {
             if (value == "USEREDITINPUT") {
                 this.user_input = "What is the capital of China?";
                 this.input_value = "What is the capital of China?";
-                this.USEREDITINPUT_params['ground_truth'] = "Beijing";
+                this.USEREDITINPUT_params['task_aware_target_tokens'] = "Beijing";
                 this.dataset_flag = "USEREDITINPUT"
                 this.select_dataset = "";
             } else {
@@ -567,7 +567,7 @@ export default {
             // let newObj = Object.fromEntries(Object.entries(this.input_obj).filter(([key, value]) => key !== "prompt"));
 
             // 展示固定字段
-            let allowedFields = ["dataset_name", "ground_truth"];
+            let allowedFields = ["dataset_name", "task_aware_target_tokens"];
             let newObj = Object.fromEntries(
                 Object.entries(this.input_obj).filter(([key, value]) => allowedFields.includes(key))
             );

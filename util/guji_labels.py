@@ -29,8 +29,8 @@ def attribution_heatmap_meta():
         "title": "Attribution score for output",
         "image_name": "Attribution score for output",
         "x_label": "Prompt tokens",
-        "y_label": "Ground truth tokens",
-        "image_des": "The graph above represents the attribution score of the input prompt's tokens on predicting the tokens in the ground truth.",
+        "y_label": "Task-aware target tokens",
+        "image_des": "The graph above represents the attribution score of the input prompt's tokens on predicting the tokens in the task-aware target tokens.",
     }
 
 

@@ -43,9 +43,9 @@ def _iter_hint_texts(sample: Dict, hint_texts: Sequence[str] | None) -> List[str
     if output_segment:
         hints.append(output_segment)
 
-    ground_truth = sample.get("ground_truth")
-    if isinstance(ground_truth, str) and 1 < len(ground_truth) <= 24:
-        hints.append(ground_truth)
+    task_aware_target_tokens = sample.get("task_aware_target_tokens")
+    if isinstance(task_aware_target_tokens, str) and 1 < len(task_aware_target_tokens) <= 24:
+        hints.append(task_aware_target_tokens)
 
     if hint_texts:
         hints.extend(hint_texts)

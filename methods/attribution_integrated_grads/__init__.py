@@ -10,7 +10,7 @@ class AttributionHyperParams(HyperParams):
 
 from .attribution_main import diagnose
 name = "Attribution"
-requires_input_keys = ["prompt", "ground_truth"]
+requires_input_keys = ["prompt", "task_aware_target_tokens"]
 cost_seconds_per_query = 3
 interpret_class=util.constant.Attribution
 external_internal = util.constant.external_str

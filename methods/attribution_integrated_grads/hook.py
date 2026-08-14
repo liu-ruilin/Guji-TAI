@@ -254,9 +254,9 @@ class Attribution:
         return baseline_outputs
     
 
-    def _generate(self, prompt, ground_truth):
+    def _generate(self, prompt, task_aware_target_tokens):
         encoded_input, mask_idx, target_label = self._prepare_inputs(
-            prompt, ground_truth
+            prompt, task_aware_target_tokens
         )
         # for autoregressive models, we might want to generate > 1 token
         n_sampling_steps = len(target_label) if is_autoregressive_model_type(self.model_type) else 1
@@ -269,7 +269,7 @@ class Attribution:
             if i > 0:
                 # retokenize new inputs
                 encoded_input, mask_idx, target_label = self._prepare_inputs(
-                    prompt, ground_truth
+                    prompt, task_aware_target_tokens
                 )
             outputs = self.model(**encoded_input)
             probs = F.softmax(outputs.logits[:, mask_idx, :], dim=-1)
@@ -350,7 +350,7 @@ class Attribution:
     def get_attribution_scores(
         self,
         prompt: str,
-        ground_truth: str,
+        task_aware_target_tokens: str,
         batch_size: int = 10,
         steps: int = 20,
         encoded_input: Optional[int] = None,
@@ -360,8 +360,8 @@ class Attribution:
         get the attribution scores for a given layer
         `prompt`: str
             the prompt to get the attribution scores for
-        `ground_truth`: str
-            the ground truth / expected output
+        `task_aware_target_tokens`: str
+            the task-aware target tokens / expected output
         `layer_idx`: int
             the layer to get the scores for
         `batch_size`: int
@@ -384,14 +384,14 @@ class Attribution:
         )
         te = encode_text_as_token_ids(
             tokenizer=self.mt.tokenizer,
-            text=ground_truth,
+            text=task_aware_target_tokens,
             model_type=self.mt.model_type,
             add_special_tokens=False,
         )
 
         # First we take the unmodified model and use a hook to return the baseline intermediate activations at our chosen target layer
         encoded_input, mask_idx, target_label = self._prepare_inputs(
-            prompt, ground_truth, encoded_input
+            prompt, task_aware_target_tokens, encoded_input
         )
 
         # for autoregressive models, we might want to generate > 1 token
@@ -403,7 +403,7 @@ class Attribution:
                 if i > 0 and is_autoregressive_model_type(self.model_type):
                     # retokenize new inputs
                     encoded_input, mask_idx, target_label = self._prepare_inputs(
-                        prompt, ground_truth
+                        prompt, task_aware_target_tokens
                     )
                 (
                     baseline_outputs,
@@ -512,7 +512,7 @@ class Attribution:
                 if i > 0 and is_autoregressive_model_type(self.model_type):
                     # retokenize new inputs
                     encoded_input, mask_idx, target_label = self._prepare_inputs(
-                        prompt, ground_truth
+                        prompt, task_aware_target_tokens
                     )
                 (
                     baseline_outputs,

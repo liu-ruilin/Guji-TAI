@@ -28,7 +28,7 @@ def normalize_qa_sample(sample, domain="generic"):
         "prompt": prompt,
         "question": question,
         "context": context,
-        "ground_truth": answer,
+        "task_aware_target_tokens": answer,
         "task_type": "qa",
         "domain": domain,
     }
@@ -51,7 +51,7 @@ def normalize_generation_sample(
     return {
         "prompt": prompt,
         "source_text": source_text,
-        "ground_truth": answer,
+        "task_aware_target_tokens": answer,
         "task_type": "generation",
         "sub_task": sub_task,
         "reasoning_mode": reasoning_mode,
@@ -70,7 +70,7 @@ def normalize_relation_extraction_sample(
     return {
         "prompt": prompt,
         "source_text": source_text,
-        "ground_truth": answer,
+        "task_aware_target_tokens": answer,
         "task_type": "structured_understanding",
         "sub_task": "relation_extraction",
         "reasoning_mode": "0_shot",
@@ -91,7 +91,7 @@ def normalize_kb_reasoning_sample(
     return {
         "prompt": prompt,
         "source_text": source_text,
-        "ground_truth": answer,
+        "task_aware_target_tokens": answer,
         "task_type": "structured_understanding",
         "sub_task": "kb_reasoning",
         "reasoning_mode": "0_shot",

@@ -301,7 +301,7 @@ def run_overhead_eval(
                 try:
                     adapted = adapt_sample_for_method(sample=sample, method_name=method_name)
                     prompt = _clean_text(adapted.get("prompt"))
-                    target_text = _clean_text(adapted.get("ground_truth_full") or adapted.get("ground_truth"))
+                    target_text = _clean_text(adapted.get("task_aware_target_tokens_full") or adapted.get("task_aware_target_tokens"))
 
                     _clear_runtime_caches(model_name)
                     _, baseline_time, baseline_peak_gpu_gb = _measure_callable(

@@ -5,7 +5,7 @@ You are a useful information extractor, you would extract relevant knowledge fro
 While extracting knowledge, you can use the following key-value pairs (Note: "prompt" must be used). Their explanations are as follows:
 {
     "prompt": "Denoting the knowledge input extracted from user's query",   ## Must support format as string ##
-    "ground_truth": "Denoting the output corresponding to the prompt or prompts", In the format of a string
+    "task_aware_target_tokens": "Denoting the output corresponding to the prompt or prompts", In the format of a string
     "triple_subject": "Denoting the subject of a triple that constitutes the knowledge", In the format of a string ## If used, it must appear in the prompt. ##
     "triple_relation": "Denoting the relation of a triple that constitutes the knowledge", In the format of a string
     "triple_object": "Denoting the object of a triple that constitutes the knowledge", In the format of a string
@@ -13,12 +13,12 @@ While extracting knowledge, you can use the following key-value pairs (Note: "pr
 }
 Here are some examples:
 Input: Epaspidoceras belongs to Aspidoceratidae.
-Output: From this input, I can deduce the knowledge ["Epaspidoceras", "belongs to", "Aspidoceratidae"], I can summarize the following prompt "Which family does Epaspidoceras belong to?" The ground truth is "Aspidoceratidae".
+Output: From this input, I can deduce the knowledge ["Epaspidoceras", "belongs to", "Aspidoceratidae"], I can summarize the following prompt "Which family does Epaspidoceras belong to?" The task-aware target tokens is "Aspidoceratidae".
 So I can format the input as follow:
 ```json
 {
   "prompt": "Which family does Epaspidoceras belong to?",
-  "ground_truth": "Aspidoceratidae",
+  "task_aware_target_tokens": "Aspidoceratidae",
   "triple_subject": "Epaspidoceras",
   "triple_relation": "belongs to",
   "triple_object":  "Aspidoceratidae",
@@ -27,17 +27,17 @@ So I can format the input as follow:
 ```
 
 Input: 1+1=2
-Output: From this input, I can summarize the following prompt "1+1=". The ground truth is "2".
+Output: From this input, I can summarize the following prompt "1+1=". The task-aware target tokens is "2".
 So I can format the input as follow:
 ```json
 {
   "prompt": "1+1=",
-  "ground_truth": "2",
+  "task_aware_target_tokens": "2",
 }
 ```
 
 Input: What do cats like to eat?
-Output: From this input, I can summarize the following prompt "What do cats like to eat?". However, the ground truth is not given. I can deduce the subject "cats".
+Output: From this input, I can summarize the following prompt "What do cats like to eat?". However, the task-aware target tokens is not given. I can deduce the subject "cats".
 So I can format the input as follow:
 ```json
 {
@@ -47,12 +47,12 @@ So I can format the input as follow:
 ```
 
 Input: I want to know the parameters inside the model corresponding to "China's capital is Beijing".
-Output: From this input, I can deduce that the user wants to inquire about the knowledge ["China", "capital", "Beijing"]. I can summarize the prompt as "The capital of China is" and the ground truth is "Beijing". 
+Output: From this input, I can deduce that the user wants to inquire about the knowledge ["China", "capital", "Beijing"]. I can summarize the prompt as "The capital of China is" and the task-aware target tokens is "Beijing". 
 Therefore, I can format the input for output as:
 ```json
 {
     "prompt": "The capital of China is",
-    "ground_truth": "Beijing",
+    "task_aware_target_tokens": "Beijing",
     "triple_subject": "China",
     "triple_relation": "capital",
     "triple_object":  "Beijing",
@@ -67,14 +67,14 @@ def str2dic(input_text):
     return json.loads(matches)
 
 if __name__ == "__main__":
-    text = """From this input, I can deduce the knowledge ("Vinson Mountains", "are located on the continent of", "Antarctica"). I can summarize the following prompt "Where are the Vinson Mountains located?". The ground truth is "Antarctica".
+    text = """From this input, I can deduce the knowledge ("Vinson Mountains", "are located on the continent of", "Antarctica"). I can summarize the following prompt "Where are the Vinson Mountains located?". The task-aware target tokens is "Antarctica".
 
 Therefore, I can format the input as follows:
 
 ```json
 {
   "prompt": "Where are the Vinson Mountains located?",
-  "ground_truth": "Antarctica",
+  "task_aware_target_tokens": "Antarctica",
   "triple_subject": "Vinson Mountains",
   "triple_relation": "are located on the continent of",
   "triple_object": "Antarctica",

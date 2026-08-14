@@ -14,7 +14,7 @@ class FiNEHyperParams(HyperParams):
 
 from .FiNE_main import diagnose
 name = "FiNE"
-requires_input_keys = ["prompt", "ground_truth"]
+requires_input_keys = ["prompt", "task_aware_target_tokens"]
 cost_seconds_per_query = 1
 interpret_class=util.constant.neuron_attribution
 external_internal = util.constant.internal_str

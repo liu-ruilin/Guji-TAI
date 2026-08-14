@@ -47,7 +47,7 @@ def _resolve_logit_target_text(sample):
     if output_segment:
         return str(output_segment)
 
-    return str(sample.get("ground_truth", ""))
+    return str(sample.get("task_aware_target_tokens", ""))
 
 
 def _build_candidate_rank_changes(layer_tokens):
@@ -72,7 +72,7 @@ def _collect_logit_hint_tokens(layer_tokens, max_hints: int = 8):
 
 def diagnose(sample, model_name_or_path, hparams=None):
     """
-    Return: dic: {"output": ground_truth of data, "image": image save path, "neuron_dic": {"neuron_name": [list of strings]}}
+    Return: dic: {"output": task_aware_target_tokens of data, "image": image save path, "neuron_dic": {"neuron_name": [list of strings]}}
     """
     result = dict()
     result["output"] = ""

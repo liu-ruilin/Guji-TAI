@@ -150,9 +150,9 @@ class FiNEKnowledgeNeurons:
                 target = self.tokenizer.convert_tokens_to_ids(target)
         return encoded_input, mask_idx, target
 
-    def _generate(self, prompt, ground_truth):
+    def _generate(self, prompt, task_aware_target_tokens):
         encoded_input, mask_idx, target_label = self._prepare_inputs(
-            prompt, ground_truth
+            prompt, task_aware_target_tokens
         )
         # for autoregressive models, we might want to generate > 1 token
         n_sampling_steps = len(target_label) if ("qwen" in self.model_type or "gpt" in self.model_type or 'llama' in self.model_type) else 1
@@ -165,7 +165,7 @@ class FiNEKnowledgeNeurons:
             if i > 0:
                 # retokenize new inputs
                 encoded_input, mask_idx, target_label = self._prepare_inputs(
-                    prompt, ground_truth
+                    prompt, task_aware_target_tokens
                 )
             outputs = self.model(**encoded_input)
             probs = F.softmax(outputs.logits[:, mask_idx, :], dim=-1)
@@ -316,9 +316,9 @@ class FiNEKnowledgeNeurons:
 
     def get_scores_quick(self,
                          prompt: str,
-                         ground_truth: str,
+                         task_aware_target_tokens: str,
                          layers: List[int]):
-        encoded_input, _, target_label = self._prepare_inputs(prompt+" "+ground_truth, ground_truth)
+        encoded_input, _, target_label = self._prepare_inputs(prompt+" "+task_aware_target_tokens, task_aware_target_tokens)
         target_len = len(target_label)
         model_output, activation = self.get_layers_activation(encoded_input=encoded_input, layers=layers)
         # num_layer * len * hidden_dim

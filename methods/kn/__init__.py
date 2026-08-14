@@ -15,7 +15,7 @@ class KNHyperParams(HyperParams):
 
 from .kn_main import diagnose
 name = "KN"
-requires_input_keys = ["prompts", "ground_truth"]
+requires_input_keys = ["prompts", "task_aware_target_tokens"]
 cost_seconds_per_query = 80
 interpret_class=util.constant.neuron_attribution
 external_internal = util.constant.internal_str

@@ -43,7 +43,7 @@ def _collect_text(sample: Dict) -> str:
         sample.get("prompt", ""),
         sample.get("context", ""),
         sample.get("source_text", ""),
-        sample.get("ground_truth", ""),
+        sample.get("task_aware_target_tokens", ""),
     ]
     return " ".join(str(x) for x in fields if x).lower()
 
@@ -70,11 +70,11 @@ def infer_task_schema(sample: Dict) -> Dict:
         schema["target_triple"] = triple
         return schema
 
-    ground_truth = sample.get("ground_truth")
-    if isinstance(ground_truth, dict) and ground_truth.get("target_triple"):
+    task_aware_target_tokens = sample.get("task_aware_target_tokens")
+    if isinstance(task_aware_target_tokens, dict) and task_aware_target_tokens.get("target_triple"):
         schema["target_type"] = "target_triple"
         schema["task_family"] = "relation_extraction"
-        schema["target_triple"] = ground_truth.get("target_triple")
+        schema["target_triple"] = task_aware_target_tokens.get("target_triple")
         return schema
 
     missing_positions = sample.get("missing_positions")

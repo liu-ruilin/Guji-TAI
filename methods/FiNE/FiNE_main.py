@@ -32,7 +32,7 @@ def _resolve_neuron_target_text(sample):
     output_segment = explanation_target.get("output_segment")
     if output_segment:
         return str(output_segment)
-    return str(sample.get("ground_truth", ""))
+    return str(sample.get("task_aware_target_tokens", ""))
 
 def get_scores(model, tok, sample, hparams):
     runtime_device = getattr(model, "device", None)
@@ -49,7 +49,7 @@ def get_scores(model, tok, sample, hparams):
     )
     max_layer = hparams.max_layer if hparams.max_layer != -1 else fine.n_layers()
     scores = fine.get_scores_quick(prompt=sample["prompt"], 
-                                            ground_truth=sample["ground_truth"], 
+                                            task_aware_target_tokens=sample["task_aware_target_tokens"], 
                                             layers=[i for i in range(max_layer)])
     
     _, neuron_flat = torch.topk(scores.flatten(), k=hparams.num_neuron)
@@ -89,10 +89,10 @@ def get_scores(model, tok, sample, hparams):
 lock_kn = threading.Lock()
 def diagnose(sample, model_name_or_path, hparams=None):
     """
-    return: dic: {"output": ground_truth of data, "image": image save path, "neuron_dic": {"neuron_name": [list of strings]}}
+    return: dic: {"output": task_aware_target_tokens of data, "image": image save path, "neuron_dic": {"neuron_name": [list of strings]}}
     """
     result = dict()
-    result["output"] = sample["ground_truth"]
+    result["output"] = sample["task_aware_target_tokens"]
     result["image"] = []
     result["table"] = []
     with lock_kn:

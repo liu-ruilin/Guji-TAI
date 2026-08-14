@@ -11,7 +11,7 @@ dataset_info = {
 support_template_keys = [
     "prompt",
     "source_text",
-    "ground_truth",
+    "task_aware_target_tokens",
     "task_type",
     "sub_task",
     "reasoning_mode",
@@ -45,7 +45,7 @@ def get_processed_kvs(sample, keys=None, required_keys=None):
     item = {
         "prompt": sample.get("prompt", ""),
         "source_text": sample.get("source_text", ""),
-        "ground_truth": sample.get("ground_truth", ""),
+        "task_aware_target_tokens": sample.get("task_aware_target_tokens", ""),
         "task_type": sample.get("task_type", "structured_understanding"),
         "sub_task": sample.get("sub_task", "kb_reasoning"),
         "reasoning_mode": sample.get("reasoning_mode", "0_shot"),

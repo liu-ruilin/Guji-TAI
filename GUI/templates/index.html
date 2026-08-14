@@ -1050,7 +1050,7 @@
                 <strong id="metaDataset">Custom Input</strong>
               </div>
               <div class="meta-box">
-                <span id="groundTruthLabel">Ground Truth</span>
+                <span id="groundTruthLabel">Task-aware Target Tokens</span>
                 <pre id="metaGroundTruth">-</pre>
               </div>
             </div>
@@ -1226,7 +1226,7 @@
           randomBtn: "Random Sample",
           diagnoseBtn: "Diagnose",
           datasetMetaLabel: "Dataset",
-          groundTruthLabel: "Ground Truth",
+          groundTruthLabel: "Task-aware Target Tokens",
           availableSamplesLabel: "Available Samples",
           runMonitorTitle: "Run Monitor",
           runMonitorDescription:
@@ -1285,7 +1285,7 @@
           randomBtn: "随机样本",
           diagnoseBtn: "开始诊断",
           datasetMetaLabel: "数据集",
-          groundTruthLabel: "标准答案",
+          groundTruthLabel: "任务感知目标词元",
           availableSamplesLabel: "可用样本",
           runMonitorTitle: "运行监视区",
           runMonitorDescription: "在这里跟踪当前会话、后端流式状态和最近操作。",
@@ -1546,7 +1546,7 @@
         elements.customQuestionInput.value = state.customQuestion;
 
         elements.metaDataset.textContent = state.inputObject.dataset_name || state.selectedDatasetLabel || "Custom Input";
-        elements.metaGroundTruth.textContent = state.inputObject.ground_truth || "-";
+        elements.metaGroundTruth.textContent = state.inputObject.task_aware_target_tokens || "-";
         elements.promptDisplay.textContent =
           state.selectedPrompt || state.customQuestion || t("noPromptSelected");
 
@@ -1568,7 +1568,7 @@
         elements.resultSnapshot.textContent = JSON.stringify(
           {
             dataset_name: state.inputObject.dataset_name || state.selectedDatasetLabel || "",
-            ground_truth: state.inputObject.ground_truth || "",
+            task_aware_target_tokens: state.inputObject.task_aware_target_tokens || "",
           },
           null,
           2
@@ -2066,7 +2066,7 @@
           method_name: state.selectedMethods,
           input: state.inputObject && Object.keys(state.inputObject).length
             ? state.inputObject
-            : { prompt: state.customQuestion, ground_truth: "" },
+            : { prompt: state.customQuestion, task_aware_target_tokens: "" },
         };
 
         setStatus("Streaming", "Diagnosis in progress");

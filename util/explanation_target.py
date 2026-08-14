@@ -17,7 +17,7 @@ def build_explanation_target(sample: Dict, task_schema: Optional[Dict] = None) -
     if target_type == "target_triple":
         triple = sample.get("target_triple") or schema.get("target_triple")
         if not triple:
-            triple = extract_triple_from_text(sample.get("ground_truth", ""))
+            triple = extract_triple_from_text(sample.get("task_aware_target_tokens", ""))
         if triple:
             explanation["target_triple"] = triple
 
@@ -30,7 +30,7 @@ def build_explanation_target(sample: Dict, task_schema: Optional[Dict] = None) -
             explanation["positions"] = positions
 
     if target_type == "decision_position":
-        explanation["focus_text"] = sample.get("ground_truth") or schema.get("focus_text") or sample.get("prompt")
+        explanation["focus_text"] = sample.get("task_aware_target_tokens") or schema.get("focus_text") or sample.get("prompt")
 
     return explanation
 

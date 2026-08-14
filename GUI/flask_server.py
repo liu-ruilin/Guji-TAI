@@ -207,7 +207,7 @@ class InterpretGUIFlask:
                         "dataset_name": input_text+"测试 dataset_name"+str(i),
                         "dataset_type":input_text+"测试 dataset_type"+str(i),
                         "prompt":(input_text+"测试 prompt"+str(i))*5,
-                        "ground_truth":input_text+"测试 ground_truth"+str(i),
+                        "task_aware_target_tokens":input_text+"测试 task_aware_target_tokens"+str(i),
                         # ....
                     })
                 """

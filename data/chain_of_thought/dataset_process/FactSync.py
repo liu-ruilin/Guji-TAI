@@ -32,17 +32,17 @@ class FactSyncDataset(Dataset):
     def samples(self, n=5):
         return [get_processed_kvs(self.data[idx]) for idx in random.sample(range(len(self)), n)]
     
-support_template_keys = ["prompt", "prompts", "ground_truth", "triple_subject"]
+support_template_keys = ["prompt", "prompts", "task_aware_target_tokens", "triple_subject"]
 
 def get_processed_kvs(sample, keys=support_template_keys):
     kvs = dict(sample)
     kvs["dataset_name"] = dataset_info["name"]
     kvs["dataset_type"] = dataset_info.get("dataset_type", "")
     subject = sample["requested_rewrite"]["subject"]
-    ground_truth = sample["requested_rewrite"]["target_new"]["str"]
-    kvs["prompt"] = sample["requested_rewrite"]["prompt"].replace("{}", subject).replace(ground_truth, "")
-    kvs["prompts"] = [prom.replace(ground_truth, "") for prom in sample["paraphrase_prompts"]]
-    kvs["ground_truth"] = ground_truth
+    task_aware_target_tokens = sample["requested_rewrite"]["target_new"]["str"]
+    kvs["prompt"] = sample["requested_rewrite"]["prompt"].replace("{}", subject).replace(task_aware_target_tokens, "")
+    kvs["prompts"] = [prom.replace(task_aware_target_tokens, "") for prom in sample["paraphrase_prompts"]]
+    kvs["task_aware_target_tokens"] = task_aware_target_tokens
     kvs["triple_subject"] = subject
     return kvs
 

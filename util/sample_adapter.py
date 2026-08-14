@@ -124,7 +124,7 @@ def infer_triple_subject(sample: Dict) -> str:
     return _clean_text(prompt[:8])
 
 
-def build_focus_ground_truth(text: str, max_chars: int = 32) -> str:
+def build_focus_task_aware_target_tokens(text: str, max_chars: int = 32) -> str:
     text = _clean_text(text)
     if not text:
         return ""
@@ -148,17 +148,17 @@ def adapt_sample_for_method(sample: Dict, method_name: str) -> Dict:
     adapted = deepcopy(sample) if isinstance(sample, dict) else {}
 
     prompt = _build_prompt(adapted)
-    ground_truth = _first_non_empty(adapted, ["ground_truth", "output", "answer", "target"])
+    task_aware_target_tokens = _first_non_empty(adapted, ["task_aware_target_tokens", "output", "answer", "target"])
 
     adapted["prompt"] = prompt
-    adapted["ground_truth"] = ground_truth
+    adapted["task_aware_target_tokens"] = task_aware_target_tokens
     adapted["prompts"] = adapted.get("prompts") or _build_prompt_variants(adapted, prompt)
     adapted["triple_subject"] = infer_triple_subject(adapted)
 
     # Keep a stable short target for token-level explainability methods.
     if method_name in {"Attribution", "KN", "FiNE"}:
-        adapted["ground_truth_full"] = ground_truth
-        adapted["ground_truth"] = build_focus_ground_truth(ground_truth, max_chars=24)
+        adapted["task_aware_target_tokens_full"] = task_aware_target_tokens
+        adapted["task_aware_target_tokens"] = build_focus_task_aware_target_tokens(task_aware_target_tokens, max_chars=24)
 
     schema = infer_task_schema(adapted)
     explanation_target = build_explanation_target(adapted, schema)

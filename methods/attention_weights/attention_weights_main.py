@@ -56,10 +56,10 @@ def _summarize_attention_tokens(token_list, attention_weights, top_k=3):
 
 def diagnose(sample, model_name_or_path, hparams=None):
     """
-    return: dic: {"output": ground_truth of data, "image": image save path, "neuron_dic": {"neuron_name": [list of strings]}}
+    return: dic: {"output": task_aware_target_tokens of data, "image": image save path, "neuron_dic": {"neuron_name": [list of strings]}}
     """
     result = dict()
-    result["output"] = sample["ground_truth"]
+    result["output"] = sample["task_aware_target_tokens"]
     result["image"] = []
     result["table"] = []
     tem_img = []

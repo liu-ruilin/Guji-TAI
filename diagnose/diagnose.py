@@ -12,7 +12,7 @@ from util.sample_adapter import adapt_sample_for_method
 
 def get_model_output(sample, model_name_or_path, method=None, hparams=None):
     try:
-        model_output = sample["ground_truth"]
+        model_output = sample["task_aware_target_tokens"]
     except:
         model_output = ""
     return model_output

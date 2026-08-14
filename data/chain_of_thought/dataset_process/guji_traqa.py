@@ -12,7 +12,7 @@ support_template_keys = [
     "prompt",
     "question",
     "context",
-    "ground_truth",
+    "task_aware_target_tokens",
     "task_type",
     "domain",
 ]
@@ -42,7 +42,7 @@ def get_processed_kvs(sample, keys=None, required_keys=None):
         "prompt": sample.get("prompt", ""),
         "question": sample.get("question", ""),
         "context": sample.get("context", ""),
-        "ground_truth": sample.get("ground_truth", ""),
+        "task_aware_target_tokens": sample.get("task_aware_target_tokens", ""),
         "task_type": sample.get("task_type", "qa"),
         "domain": sample.get("domain", "traditional_culture"),
     }

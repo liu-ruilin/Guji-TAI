@@ -42,7 +42,7 @@ class Interpret_vectordb:
             "question",
             "context",
             "source_text",
-            "ground_truth",
+            "task_aware_target_tokens",
             "task_type",
             "sub_task",
             "domain",

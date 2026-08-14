@@ -42,7 +42,7 @@ def _resolve_target_text(sample: Dict) -> str:
     if output_segment:
         return str(output_segment)
 
-    return str(sample.get("ground_truth", ""))
+    return str(sample.get("task_aware_target_tokens", ""))
 
 
 def _aggregate_token_scores_to_spans(prompt_tokens, score_matrix, top_k: int = 3):
@@ -106,14 +106,14 @@ def _is_oom_error(exc: Exception) -> bool:
     return "out of memory" in str(exc).lower()
 
 
-def _run_attribution_with_oom_retry(att, *, prompt: str, ground_truth: str, batch_size: int, steps: int):
+def _run_attribution_with_oom_retry(att, *, prompt: str, task_aware_target_tokens: str, batch_size: int, steps: int):
     last_error = None
     for effective_batch_size in _candidate_batch_sizes(batch_size, steps):
         try:
             with torch.set_grad_enabled(True):
                 return att.get_attribution_scores(
                     prompt=prompt,
-                    ground_truth=ground_truth,
+                    task_aware_target_tokens=task_aware_target_tokens,
                     batch_size=effective_batch_size,
                     steps=steps,
                 )
@@ -145,10 +145,10 @@ def get_attributes(x: torch.nn.Module, attributes: str):
 
 def diagnose(sample, model_name_or_path, hparams=None):
     """
-    return: dic: {"output": ground_truth of data, "image": image save path, "neuron_dic": {"neuron_name": [list of strings]}}
+    return: dic: {"output": task_aware_target_tokens of data, "image": image save path, "neuron_dic": {"neuron_name": [list of strings]}}
     """
     result = dict()
-    result["output"] = sample["ground_truth"]
+    result["output"] = sample["task_aware_target_tokens"]
     result["image"] = []
     target_text = _resolve_target_text(sample)
     with lock_kn:
@@ -170,26 +170,26 @@ def diagnose(sample, model_name_or_path, hparams=None):
         score, prompt_list, te = _run_attribution_with_oom_retry(
             att,
             prompt=sample["prompt"],
-            ground_truth=target_text,
+            task_aware_target_tokens=target_text,
             batch_size=hparams.batch_size,
             steps=hparams.num_steps,
         )
-        # len(ground_truth_tokens)*len(prompt_tokens)
+        # len(task_aware_target_tokens_tokens)*len(prompt_tokens)
         tem_score = _normalize_score_matrix(score)
         max_indices = _top_score_indices(tem_score, top_k=3)
         score = tem_score.tolist() 
         prompt_token = mt.tokenizer.batch_decode([[i] for i in prompt_list])   
-        ground_truth_token = mt.tokenizer.batch_decode([[i] for i in te])
+        task_aware_target_tokens_token = mt.tokenizer.batch_decode([[i] for i in te])
         evidence_spans = _aggregate_token_scores_to_spans(prompt_token, score, top_k=3)
         plot_meta = attribution_heatmap_meta()
-        # result["result_des"] = f"The attribution scores for the top 3 input-output pairs are: {[f'{prompt_token[ind[1]]}->{ground_truth_token[ind[0]]}' for ind in max_indices]}."
+        # result["result_des"] = f"The attribution scores for the top 3 input-output pairs are: {[f'{prompt_token[ind[1]]}->{task_aware_target_tokens_token[ind[0]]}' for ind in max_indices]}."
 
         import seaborn as sns
         import matplotlib.pyplot as plt
         tmp_png_file = get_temp_file_with_prefix_suffix(suffix=".png")
         with chinese_plot_context():
             plt.figure()
-            df = pd.DataFrame(np.array(score), index=ground_truth_token, columns=prompt_token)
+            df = pd.DataFrame(np.array(score), index=task_aware_target_tokens_token, columns=prompt_token)
             cmap = sns.heatmap(data=df, annot=False, cmap="Reds")
             cmap.set_title(plot_meta["title"])
             plt.xticks(fontsize=8)
@@ -201,11 +201,11 @@ def diagnose(sample, model_name_or_path, hparams=None):
             plt.close(fig)
         result["image"].append({"image_name": plot_meta["image_name"], "image_path": tmp_png_file, 
                                 "image_des": plot_meta["image_des"],
-                                "image_res": f"The attribution scores for the top 3 input-output pairs are: \n{', '.join([f'{prompt_token[ind[1]]}->{ground_truth_token[ind[0]]}' for ind in max_indices])}."})
+                                "image_res": f"The attribution scores for the top 3 input-output pairs are: \n{', '.join([f'{prompt_token[ind[1]]}->{task_aware_target_tokens_token[ind[0]]}' for ind in max_indices])}."})
         result["origin_data"] = {
             "Attribution": score,
             "prompt_tokens": prompt_token,
-            "ground_truth_tokens": ground_truth_token,
+            "task_aware_target_tokens_tokens": task_aware_target_tokens_token,
             "target_text": target_text,
         }
         result["evidence_spans"] = evidence_spans
