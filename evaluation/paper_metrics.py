@@ -4,10 +4,6 @@ import math
 from copy import deepcopy
 from typing import Any, Callable, Dict, Iterable, List
 
-import torch
-
-from diagnose.diagnose import diagnosing
-from util.runtime import get_cached_model_tok_runtime
 from util.sample_adapter import adapt_sample_for_method
 
 
@@ -129,6 +125,9 @@ def score_target_probability(prompt: str, target_text: str, *, model_name: str) 
     if not target_text:
         return 0.0
 
+    import torch
+    from util.runtime import get_cached_model_tok_runtime
+
     mt = get_cached_model_tok_runtime(model_name_or_path=model_name)
     tokenizer = mt.tokenizer
     model = mt.model
@@ -247,10 +246,15 @@ def evaluate_explanation_sample(
     model_name: str,
     method_name: str,
     scorer_fn: Callable[..., float] | None = None,
-    diagnose_fn: Callable[..., Dict] = diagnosing,
+    diagnose_fn: Callable[..., Dict] | None = None,
     top_k: int = 3,
     variant_limit: int = 3,
 ):
+    if diagnose_fn is None:
+        from diagnose.diagnose import diagnosing
+
+        diagnose_fn = diagnosing
+
     adapted = adapt_sample_for_method(sample=sample, method_name=method_name)
     prompt = _clean_text(adapted.get("prompt"))
     target_text = _clean_text(adapted.get("task_aware_target_tokens_full") or adapted.get("task_aware_target_tokens"))
@@ -301,7 +305,17 @@ def evaluate_explanation_sample(
 
     naopc_score = _normalize_naopc(raw_aopc, lower_aopc, upper_aopc)
 
-    variants = (adapted.get("prompts") or [prompt])[: max(1, variant_limit)]
+    # Always compare against the diagnosed base, even if explicit prompts omit it.
+    # Blank/duplicate/base prompts are not perturbation tests and do not consume
+    # the limit (which includes the base for compatibility).
+    variants = [prompt]
+    seen = {prompt}
+    for candidate in adapted.get("prompts") or []:
+        candidate = _clean_text(candidate)
+        if candidate and candidate not in seen:
+            variants.append(candidate)
+            seen.add(candidate)
+    variants = variants[: max(1, variant_limit)]
     base_spans = set(evidence_texts)
     span_overlaps = []
     for variant_prompt in variants[1:]:
@@ -321,7 +335,7 @@ def evaluate_explanation_sample(
             "naopc": naopc_score,
         },
         "stability": {
-            "span_iou": round(sum(span_overlaps) / len(span_overlaps), 6) if span_overlaps else 1.0,
+            "span_iou": round(sum(span_overlaps) / len(span_overlaps), 6) if span_overlaps else None,
         },
         "target_alignment": {
             "tta_at_3": tta_at_k,
@@ -332,6 +346,7 @@ def evaluate_explanation_sample(
             "ablated_prompt": ablated_prompt,
         },
         "diagnostics": {
+            "stability_comparisons": len(span_overlaps),
             "original_score": round(original_score, 6),
             "ablated_score": round(ablated_score, 6),
             "kept_score": round(kept_score, 6),

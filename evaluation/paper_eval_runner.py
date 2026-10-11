@@ -5,9 +5,7 @@ import traceback
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple
 
-from data.chain_of_thought.dataset_process import name2dataset_module
-from evaluation.guji_paper_eval import evaluate_dataset_paper
-from methods.assist import ALL_SELECTED_METHODS
+from evaluation.guji_paper_eval import _is_observed_metric, evaluate_dataset_paper
 
 
 EXCLUDED_DATASET_NAMES = {
@@ -20,6 +18,8 @@ def filter_guji_dataset_names(dataset_names):
 
 
 def default_guji_dataset_names():
+    from data.chain_of_thought.dataset_process import name2dataset_module
+
     return filter_guji_dataset_names(sorted(name2dataset_module.keys()))
 
 
@@ -35,19 +35,35 @@ def merge_weighted_metric_summaries(weighted_summaries: Iterable[Tuple[int, Dict
         return {}
 
     merged = {}
-    first_summary = weighted_summaries[0][1]
-    for method_name, method_summary in first_summary.items():
+    methods = dict.fromkeys(method for _, summary in weighted_summaries for method in summary)
+    for method_name in methods:
+        entries = [(weight, summary[method_name]) for weight, summary in weighted_summaries if method_name in summary]
         merged[method_name] = {}
-        for section_name, section_summary in method_summary.items():
+        sections = dict.fromkeys(section for _, summary in entries for section in summary)
+        for section_name in sections:
             merged[method_name][section_name] = {}
-            for metric_name in section_summary.keys():
+            keys = dict.fromkeys(key for _, summary in entries for key in summary.get(section_name, {}))
+            for metric_name in keys:
                 numerator = 0.0
                 denominator = 0
-                for weight, summary in weighted_summaries:
-                    value = summary[method_name][section_name][metric_name]
+                for weight, summary in entries:
+                    value = summary.get(section_name, {}).get(metric_name)
+                    if not _is_observed_metric(value):
+                        continue
+                    if section_name == "diagnostics":
+                        # Coverage fields are counts, not per-sample averages.
+                        numerator += value
+                        continue
+                    if section_name == "stability" and metric_name == "span_iou":
+                        # Old summaries lack coverage; retain their historical
+                        # chunk weight, while new summaries use observed samples.
+                        weight = summary.get("diagnostics", {}).get("stability_evaluated_samples", weight)
                     numerator += weight * float(value)
                     denominator += weight
-                merged[method_name][section_name][metric_name] = round(numerator / denominator, 6)
+                merged[method_name][section_name][metric_name] = (
+                    int(numerator) if section_name == "diagnostics"
+                    else round(numerator / denominator, 6) if denominator else None
+                )
     return merged
 
 
@@ -87,6 +103,9 @@ def run_full_paper_eval(
     dataset_names=None,
     method_names=None,
 ):
+    from data.chain_of_thought.dataset_process import name2dataset_module
+    from methods.assist import ALL_SELECTED_METHODS
+
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     dataset_names = list(dataset_names or default_guji_dataset_names())

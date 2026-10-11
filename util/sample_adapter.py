@@ -58,17 +58,36 @@ def _build_prompt(sample: Dict) -> str:
 
 
 def _build_prompt_variants(sample: Dict, prompt: str) -> List[str]:
+    """Vary only the framing of known fields; retain all task/source content.
+
+    Opaque or custom prompts cannot safely be reconstructed from partial fields.
+    Callers can supply explicit ``prompts`` for those samples.
+    """
     variants = [prompt]
+    fields = dict(sample)
+    fields.pop("prompt", None)
+    if prompt != _build_prompt(fields):
+        return _unique_keep_order(variants)
+
+    instruction = _clean_text(sample.get("instruction", ""))
+    input_text = _clean_text(sample.get("input", ""))
     question = _clean_text(sample.get("question", ""))
     context = _clean_text(sample.get("context", ""))
-    source_text = _clean_text(sample.get("source_text", ""))
 
-    if question:
-        variants.append(f"问题：{question}\n回答：")
-    if question and context:
-        variants.append(f"内容：{context}\n问题：{question}\n回答：")
-    if source_text:
-        variants.append(source_text)
+    if instruction and input_text:
+        variants.extend([
+            f"{instruction}\n\n{input_text}",
+            f"{instruction}\n输入：{input_text}",
+        ])
+    elif instruction:
+        variants.extend([f"{instruction}\n回答：", f"任务：{instruction}\n回答："])
+    elif question and context:
+        variants.extend([
+            f"内容：{context}\n\n问题：{question}\n回答：",
+            f"上下文：{context}\n问题：{question}\n回答：",
+        ])
+    elif question:
+        variants.extend([f"问题：{question}\n\n回答：", f"请回答以下问题：{question}\n回答："])
 
     return _unique_keep_order(variants)[:3]
 
